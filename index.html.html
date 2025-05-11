@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Manajemen Stok</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js">
+function downloadStok() {
+  if (Object.keys(stokMap).length === 0) {
+    alert("Belum ada data sisa stok untuk diunduh.");
+    return;
+  }
+
+  const stokArray = Object.keys(stokMap).map(nama => ({
+    "Nama Barang": nama,
+    "Sisa Stok": stokMap[nama]
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(stokArray);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Sisa_Stok");
+  XLSX.writeFile(workbook, "Sisa_Stok.xlsx");
+}
+
+</script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js">
+function downloadStok() {
+  if (Object.keys(stokMap).length === 0) {
+    alert("Belum ada data sisa stok untuk diunduh.");
+    return;
+  }
+
+  const stokArray = Object.keys(stokMap).map(nama => ({
+    "Nama Barang": nama,
+    "Sisa Stok": stokMap[nama]
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(stokArray);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Sisa_Stok");
+  XLSX.writeFile(workbook, "Sisa_Stok.xlsx");
+}
+
+</script>
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div id="loginSection" class="flex items-center justify-center h-screen">
+    <div class="bg-white shadow-lg rounded-lg p-6 w-80">
+      <h2 class="text-xl font-bold mb-4 text-center">Login</h2>
+      <input type="text" id="username" placeholder="Username" class="border p-2 w-full mb-3">
+      <input type="password" id="password" placeholder="Password" class="border p-2 w-full mb-3">
+      <button onclick="login()" class="bg-blue-600 text-white w-full py-2 rounded">Login</button>
+      <p id="loginError" class="text-red-500 text-sm text-center mt-2 hidden">Username atau password salah!</p>
+    </div>
+  </div>
+
+  <div id="appSection" class="hidden">
+    <header class="bg-blue-700 text-white p-4 text-center shadow-md">
+      <h1 class="text-2xl font-bold">Dashboard Stok Barang</h1>
+      <p class="text-sm">Pantau barang masuk, keluar, dan sisa stok secara realtime</p>
+    </header>
+
+    <main class="p-6">
+      <div class="mb-6 bg-white p-4 rounded-lg shadow" id="uploadSection">
+        <h2 class="font-semibold text-lg mb-2">📥 Import Data Stok dari Excel</h2>
+        <input type="file" id="excelFile" accept=".xlsx, .xls" class="mb-2">
+        <button onclick="importExcel()" class="bg-green-600 text-white px-4 py-2 rounded">Import</button>
+        <button onclick="downloadTransaksi()" class="bg-blue-600 text-white px-4 py-2 rounded ml-2">Download Transaksi</button>
+<button onclick="downloadStok()" class="bg-purple-600 text-white px-4 py-2 rounded ml-2">Download Sisa Stok</button>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-4 mb-6" id="formSection">
+        <div class="bg-white p-4 rounded-lg shadow">
+          <h2 class="font-semibold text-lg mb-2">Barang Masuk</h2>
+          <input type="date" id="masukTanggal" class="border p-2 w-full mb-2">
+          <input type="text" id="masukNama" placeholder="Nama Barang" class="border p-2 w-full mb-2">
+          <input type="number" id="masukJumlah" placeholder="Jumlah" class="border p-2 w-full mb-2">
+          <button onclick="tambahMasuk()" class="bg-blue-600 text-white px-4 py-2 rounded w-full">Tambah Masuk</button>
+        </div>
+
+        <div class="bg-white p-4 rounded-lg shadow">
+          <h2 class="font-semibold text-lg mb-2">Barang Keluar</h2>
+          <input type="date" id="keluarTanggal" class="border p-2 w-full mb-2">
+          <input type="text" id="keluarNama" placeholder="Nama Barang" class="border p-2 w-full mb-2">
+          <input type="number" id="keluarJumlah" placeholder="Jumlah" class="border p-2 w-full mb-2">
+          <input type="text" id="keluarPengambil" placeholder="Diambil oleh" class="border p-2 w-full mb-2">
+          <button onclick="tambahKeluar()" class="bg-red-600 text-white px-4 py-2 rounded w-full">Tambah Keluar</button>
+        </div>
+
+        <div class="bg-white p-4 rounded-lg shadow">
+  <h2 class="font-semibold text-lg mb-2">Sisa Stok Realtime</h2>
+  <div style="max-height: 200px; overflow-y: auto;">
+          
+    <table class="w-full text-sm text-left border">
+  <thead class="bg-gray-100">
+    <tr>
+      <th class="p-2 border">Nama Barang</th>
+      <th class="p-2 border">Sisa Stok</th>
+    </tr>
+  </thead>
+  <tbody id="stokList"></tbody>
+</table>
+  </div>
+        </div>
+      </div>
+
+      
+
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="font-semibold text-lg mb-4">Riwayat Transaksi</h2>
+        <table class="w-full text-sm text-left border" id="transaksiTable">
+          <thead class="bg-gray-200">
+            <tr>
+              <th class="p-2">Tanggal</th>
+              <th class="p-2">Nama Barang</th>
+              <th class="p-2">Masuk</th>
+              <th class="p-2">Keluar</th>
+              <th class="p-2">Diambil Oleh</th>
+            </tr>
+          </thead>
+          <tbody id="transaksiBody"></tbody>
+        </table>
+      </div>
+    <div class="bg-white p-4 rounded-lg shadow mt-6">
+  <h2 class="font-semibold text-lg mb-4">Barang Paling Sering Dipakai</h2>
+  <canvas id="chartKeluar" height="120"></canvas>
+</div>
+
+</main>
+
+    <footer class="text-center text-xs text-gray-500 mt-6 p-4">
+      &copy; 2025 Manajemen Stok Tedi. All rights reserved.
+    </footer>
+  </div>
+
+  <script>
+    let transaksiData = [];
+    let stokMap = {};
+    let chartInstance = null;
+
+    function login() {
+      const user = document.getElementById('username').value.toLowerCase();
+      const pass = document.getElementById('password').value.toLowerCase();
+      const errorMsg = document.getElementById('loginError');
+      const loginSection = document.getElementById('loginSection');
+      const appSection = document.getElementById('appSection');
+
+      if ((user === 'tedi' && pass === 'bigboss') || (user === 'admin' && pass === 'admin')) {
+        loginSection.classList.add('hidden');
+        appSection.classList.remove('hidden');
+
+        if (user === 'admin') {
+          document.getElementById('uploadSection').classList.add('hidden');
+          document.getElementById('formSection').classList.add('hidden');
+        }
+      } else {
+        errorMsg.classList.remove('hidden');
+      }
+    }
+
+    function renderTransaksi() {
+      const tbody = document.getElementById("transaksiBody");
+      const stokList = document.getElementById("stokList");
+      tbody.innerHTML = "";
+      stokList.innerHTML = '';
+      let pemakaianMap = {};
+      stokMap = {};
+
+      transaksiData.forEach(item => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td class="p-2">${item.Tanggal || '-'}</td>
+          <td class="p-2">${item.Nama || '-'}</td>
+          <td class="p-2">${item.Masuk || '-'}</td>
+          <td class="p-2">${item.Keluar || '-'}</td>
+          <td class="p-2">${item.Diambil || '-'}</td>
+        `;
+        tbody.appendChild(row);
+
+        if (item.Nama) {
+          const masuk = parseInt(item.Masuk || 0);
+          const keluar = parseInt(item.Keluar || 0);
+          stokMap[item.Nama] = (stokMap[item.Nama] || 0) + masuk - keluar;
+          pemakaianMap[item.Nama] = (pemakaianMap[item.Nama] || 0) + keluar;
+        }
+      });
+
+      for (const nama in stokMap) {
+  const row = document.createElement("tr");
+  row.innerHTML = `
+    <td class="p-2 border">${nama}</td>
+    <td class="p-2 border">${stokMap[nama]} pcs</td>
+  `;
+  stokList.appendChild(row);
+}
+
+      const labels = Object.keys(pemakaianMap);
+      const data = Object.values(pemakaianMap);
+
+      const ctx = document.getElementById('chartKeluar').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Jumlah Keluar',
+            data: data,
+            backgroundColor: 'rgba(255, 99, 132, 0.6)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    function importExcel() {
+      const fileInput = document.getElementById('excelFile');
+      const file = fileInput.files[0];
+      if (!file) {
+        alert('Silakan pilih file Excel terlebih dahulu.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(sheet);
+        transaksiData = json;
+        renderTransaksi();
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function tambahMasuk() {
+      const tanggal = document.getElementById('masukTanggal').value;
+      const nama = document.getElementById('masukNama').value;
+      const jumlah = document.getElementById('masukJumlah').value;
+      if (!nama || !jumlah) return;
+      transaksiData.push({ Tanggal: tanggal, Nama: nama, Masuk: jumlah, Keluar: '', Diambil: '' });
+      renderTransaksi();
+    }
+
+    function tambahKeluar() {
+      const tanggal = document.getElementById('keluarTanggal').value;
+      const nama = document.getElementById('keluarNama').value;
+      const jumlah = document.getElementById('keluarJumlah').value;
+      const pengambil = document.getElementById('keluarPengambil').value;
+      if (!nama || !jumlah) return;
+      transaksiData.push({ Tanggal: tanggal, Nama: nama, Masuk: '', Keluar: jumlah, Diambil: pengambil });
+      renderTransaksi();
+    }
+
+    function downloadTransaksi() {
+      if (transaksiData.length === 0) {
+        alert("Belum ada data transaksi untuk diunduh.");
+        return;
+      }
+      const worksheet = XLSX.utils.json_to_sheet(transaksiData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Transaksi");
+      XLSX.writeFile(workbook, "Data_Transaksi.xlsx");
+    }
+  
+function downloadStok() {
+  if (Object.keys(stokMap).length === 0) {
+    alert("Belum ada data sisa stok untuk diunduh.");
+    return;
+  }
+
+  const stokArray = Object.keys(stokMap).map(nama => ({
+    "Nama Barang": nama,
+    "Sisa Stok": stokMap[nama]
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(stokArray);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Sisa_Stok");
+  XLSX.writeFile(workbook, "Sisa_Stok.xlsx");
+}
+
+</script>
+</body>
+</html>
